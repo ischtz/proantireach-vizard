@@ -1,0 +1,13 @@
+{
+    "fix_delay": 1,
+    "tar_size": 0.05,
+    "use_eyetracker": false,
+    "pro_color": [0, 0, 0.9],
+    "anti_color": [0.9, 0, 0],
+    "text_color": [0.9, 0.9, 0.9],
+    "repetitions": 10,
+    "environment": "ground_wood.osgb",
+    "controller": 0,
+    "tar_dist": 0.5,
+    "go_delay": 1
+}
