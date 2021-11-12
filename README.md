@@ -1,6 +1,6 @@
 # Example VR Paradigm: Pro-/Anti-Reach Task
 
-This repository contains the Python code, data, and example analysis for a simple VR goal-directed movement task (pro-/anti-reach task), implemented using WorldViz Vizard and our upcoming *vexptoolbox* software toolbox to aid in developing behavioral experiments on the Vizard platform. 
+This repository contains the Python code, data, and example analysis for a simple VR goal-directed movement task (pro-/anti-reach task), implemented using WorldViz Vizard and [our upcoming *vexptoolbox* software toolbox](https://github.com/ischtz/vizard-experiment-toolbox) to aid in developing behavioral experiments on the Vizard platform. 
 
 It can serve as a starting point or tutorial for anyone wanting to implement their own experiments, and as documentation of the data format used by vexptoolbox. 
 
