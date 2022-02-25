@@ -1,0 +1,11 @@
+Welcome to our example pro/anti reach experiment!
+
+On each trial, please fixate the white sphere until it turns red or blue. A target cube will appear either left or right of the sphere, and the color indicates whether you should reach towards the cube (blue) or opposite of the cube (red) using your controller. Please wait until the cube and sphere disappear before starting the movement!
+
+This example experiment presents 80 trials and should not take longer than five minutes to complete. 
+
+Note: If you have enabled eye tracking, an eye tracker calibration will be performed before the start of the main experiment. 
+
+Press the controller trigger to start!
+
+

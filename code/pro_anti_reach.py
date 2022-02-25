@@ -48,6 +48,7 @@ if not controller.model:
 controller.model.disable(viz.INTERSECTION)
 viz.link(controller, controller.model)
 
+
 # Initialize the Vive Pro Eye eye tracker
 eyeTracker = None
 if ex.config.use_eyetracker:
@@ -58,7 +59,6 @@ if ex.config.use_eyetracker:
 
 # Set the scene
 room = vizfx.addChild(ex.config.environment)
-room.visible(False)
 
 # Stimulus objects
 stimuli = vx.ObjectCollection()
@@ -165,6 +165,9 @@ def Main():
     # Collect participant number etc
     yield ex.requestParticipantData()
     
+    # Show experiment instructions
+    yield vx.waitVRInstruction('instructions.txt', controller=controller)
+
     # Calibrate and validate the eye tracker
     if ex.config.use_eyetracker:
         yield vx.waitVRText('Press trigger to start eye tracker calibration!', distance=1.0, 
@@ -172,8 +175,6 @@ def Main():
         yield ex.recorder.calibrateEyeTracker()
         yield ex.recorder.validateEyeTracker(vx.VAL_TAR_CR5)
     
-    yield vx.waitVRText('Press trigger to start the experiment!', distance=1.0, 
-                         color=ex.config.text_color, controller=controller)
     ex.config.eyeheight = hmd.getSensor().getPosition(viz.ABS_GLOBAL)[1]
     room.visible(True)
 
