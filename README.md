@@ -12,11 +12,13 @@ In the pro-/anti-reach paradigm, participants perform reaching movements using t
 
 In each trial, a *target* (cube) is presented either left or right of the participant's body midline, together with a *movement cue* (blue: move towards the target, red: move towards the opposite hemifield of the target, see also the image below). In the example data presented here, we recorded eye position, controller movement trajectories, movement timing and the behavioral response (i.e., whether the movement went to the correct hemifield).
 
-![task](https://user-images.githubusercontent.com/7711674/139657561-7e0bc9f7-a514-4b1b-8036-c06217ce87b7.png)
+![task](https://user-images.githubusercontent.com/7711674/155688192-4626ee39-be66-4eda-be02-921071efeb18.png)
 
-*Screenshot of the virtual scene, with target (cube) and movement cue (red = anti-reach)*
+*Top: Screenshot of the virtual scene, with target (cube) and movement cue (red = anti-reach). Bottom: Trial sequence. After the initial sphere is fixated for 1s, it changes color to indicate the movement cue (here: red = anti-reach). A target cube is presented simultaneously for 1s, after which the participant performs a reach movement with the controller (gray).*
 
 The example task can be found in the *code* subfolder and requires Vizard and any SteamVR compatible VR headset and controller. It should run fine also on the evaluation or free license tier of Vizard.
+
+
 
 ## Example Analysis
 
@@ -32,7 +34,20 @@ Because this paradigm was meant as an example and the sample size is limited, we
 
 *Per-trial results: Movement timing and spatial error across the five tested volunteers*
 
+## Try it Out!
 
+Out of the box, this example only requires a SteamVR compatible headset and an installation of WorldViz Vizard version 6+. 
+
+1. *Install Vizard:* If you do not already have Vizard installed, you can request a free evaluation license from the manufacturers website at https://www.worldviz.com/virtual-reality-software-downloads (free license is limited to five minutes of script runtime, but this is more than enough to run this example). 
+
+2. *Download:* Clone a copy of the *proantireach-vizard* repository using ```git clone https://github.com/ischtz/proantireach-vizard.git``` or download using Github's "Download ZIP" functionality behind the "Code" button (upper right).
+
+3. *Start SteamVR*: For best results, SteamVR should be running and correctly tracking your headset, with the participant near the world origin and facing forward. This experiment also requires at least one active controller. 
+
+4. *(Optional: Enable Eye Tracking)*: Eye tracking support is turned off by default to allow the experiment to run on all SteamVR headsets. It is currently implemented for the Vive Pro Eye HMD. To enable eye tracking, ensure that the SRanipal SDK is running, then set ```"use_eyetracker": true``` in the *config.json* file. Alternatively, you can add the following statement on line 21 of the *pro_anti_reach.py* script without editing the JSON file: 
+```ex.config.use_eyetracker = True```
+
+5. *Run*: Open *pro_anti_reach.py* in the Vizard editor and press *F5* or click the "Run script" button to start!
 
 ## Citation
 
