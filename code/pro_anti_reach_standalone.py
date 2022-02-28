@@ -5,9 +5,9 @@
 # immo.schuetz@psychol.uni-giessen.de
 
 # This version of the experiment illustrates how the experimental 
-# design and parameters can be specified using external files. 
-# See *pro_anti_reach_standalone.py* for an example of how all 
-# necessary parameters can be provided in a single script file.
+# design and parameters can be specified within the script file. 
+# See *pro_anti_reach.py* for an example of how these settings can
+# be dynamically loaded from external files instead.
 
 import viz
 import vizfx
@@ -19,17 +19,53 @@ import steamvr
 
 import vexptoolbox as vx
 
+# Set experiment configuration parameters using a dictionary
+myconfig = {'fix_delay': 1,
+            'tar_size':  0.05,
+            'use_eyetracker': False,
+            'pro_color': [0, 0, 0.9],
+            'anti_color': [0.9, 0, 0],
+            'text_color': [0.9, 0.9, 0.9],
+            'repetitions': 10,
+            'environment': 'ground_wood.osgb',
+            'controller': 0,
+            'tar_dist': 0.5,
+            'go_delay': 1}
 
-# Initialize the experiment. Config parameters are loaded from config.json
-# To enable eye tracking, edit config.json and set "use_eyetracker": true.
+# Instructions for participants
+instructions = """
+Welcome to our example pro/anti reach experiment!
+
+On each trial, please fixate the white sphere until it turns red or blue. A target cube will appear either left or right of the sphere, and the color indicates whether you should reach towards the cube (blue) or opposite of the cube (red) using your controller. Please wait until the cube and sphere disappear before starting the movement!
+
+This example experiment presents 80 trials and should not take longer than five minutes to complete. 
+
+Note: If you have enabled eye tracking, an eye tracker calibration will be performed before the start of the main experiment. 
+
+Press the controller trigger to start!
+"""
+
+# Initialize the experiment with the provided config 
 # To save data automatically after each trial, set auto_save=True below.
-ex = vx.Experiment(name='Example', config='config.json', debug=True, auto_save=False)
+ex = vx.Experiment(name='Example', config=myconfig, debug=True, auto_save=False)
+
+# Note: To access or change config parameters later, be sure to always access the
+# Experiment's 'config' attribute, not the 'myconfig' dictionary used to create it!
 print(ex.config)
 
-# Load our trial design and repeat it by the specified number of repetitions...
-ex.addTrialsFromCSV('trials.csv', repeat=ex.config.repetitions)
+# To enable eye tracking, uncomment the following or modify the 'myconfig' dict:
+# ex.config.use_eyetracker = True
 
-# ...and randomize trials
+# Create our trial design by specifying a dict of factors (conditions) and their levels
+design = {'target': ['left', 'right'],
+          'pro': [0, 1],
+          'feedback': [0, 1]}
+
+# Now build the trial list by repeating this design. Factor levels are
+# added to each trial's 'params' automatically
+ex.addTrialsFullFactorial(levels=design, repeat=ex.config.repetitions)
+
+# Randomize trials
 ex.randomizeTrials()
 
 # Enable the SteamVR debugger feature - toggle with F12 key
@@ -171,8 +207,8 @@ def Main():
     # Collect participant number etc
     yield ex.requestParticipantData()
     
-    # Show experiment instructions (loaded from external text file)
-    yield vx.waitVRInstruction('instructions.txt', controller=controller)
+    # Show experiment instructions
+    yield vx.waitVRInstruction(instructions, controller=controller)
 
     # Calibrate and validate the eye tracker
     if ex.config.use_eyetracker:
