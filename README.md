@@ -2,7 +2,10 @@
 
 This repository contains the Python code, data, and example analysis for a simple VR goal-directed movement task (pro-/anti-reach task), implemented using WorldViz Vizard and [our upcoming *vexptoolbox* software toolbox](https://github.com/ischtz/vizard-experiment-toolbox) to aid in developing behavioral experiments on the Vizard platform. 
 
-It can serve as a starting point or tutorial for anyone wanting to implement their own experiments, and as documentation of the data format used by vexptoolbox. 
+It can serve as a starting point or tutorial for anyone wanting to implement their own experiments, and as documentation of the data format used by vexptoolbox. Two versions of the same experiment are provided to serve as implementation examples: 
+
+- *pro_anti_reach.py*: This script demonstrates how trials, stimulus parameters and instructions can conveniently be loaded from external files.
+- *pro_anti_reach_standalone.py*: This script implements a standalone version of the same experiment, in which all parameters are set directly in the script file.
 
 
 
@@ -36,7 +39,7 @@ Because this paradigm was meant as an example and the sample size is limited, we
 
 ## Try it Out!
 
-Out of the box, this example only requires a SteamVR compatible headset and an installation of WorldViz Vizard version 6+. 
+Out of the box, this example only requires a SteamVR compatible headset (so far tested on Vive Pro / Vive Pro Eye and on Quest 2 using the link cable) and an installation of WorldViz Vizard version 6+. 
 
 1. *Install Vizard:* If you do not already have Vizard installed, you can request a free evaluation license from the manufacturers website at https://www.worldviz.com/virtual-reality-software-downloads (free license is limited to five minutes of script runtime, but this is more than enough to run this example). 
 
@@ -44,10 +47,14 @@ Out of the box, this example only requires a SteamVR compatible headset and an i
 
 3. *Start SteamVR*: For best results, SteamVR should be running and correctly tracking your headset, with the participant near the world origin and facing forward. This experiment also requires at least one active controller. 
 
-4. *(Optional: Enable Eye Tracking)*: Eye tracking support is turned off by default to allow the experiment to run on all SteamVR headsets. It is currently implemented for the Vive Pro Eye HMD. To enable eye tracking, ensure that the SRanipal SDK is running, then set ```"use_eyetracker": true``` in the *config.json* file. Alternatively, you can add the following statement on line 21 of the *pro_anti_reach.py* script without editing the JSON file: 
-```ex.config.use_eyetracker = True```
+4. *(Optional: Enable Eye Tracking)*: Eye tracking support is turned off by default to allow the experiment to run on all SteamVR headsets. It is currently implemented for the Vive Pro Eye HMD. To enable eye tracking, ensure that the SRanipal SDK is running, then:
+    - set ```"use_eyetracker": true``` in the *config.json* file if using the *pro_anti_reach.py* script, or 
+    - set the following parameter in the config dictionary if using *pro_anti_reach_standalone.py*: ```ex.config.use_eyetracker = True```
 
-5. *Run*: Open *pro_anti_reach.py* in the Vizard editor and press *F5* or click the "Run script" button to start!
+5. *Run*: Open *pro_anti_reach.py* or *pro_anti_reach_standalone.py* in the Vizard editor and press *F5* or click the "Run script" button to start!
+
+If you encounter any errors or strange behavior during testing, or if you test the code using a new headset or eye tracker, feel free to open an issue to let us know!
+
 
 ## Citation
 
