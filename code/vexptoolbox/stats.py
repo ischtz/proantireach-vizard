@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Vizard gaze tracking toolbox
+# vexptoolbox: Vizard Toolbox for Behavioral Experiments
 # Statistics helper functions that work without numpy/scipy installed
 
 import math
@@ -65,3 +65,20 @@ def mad2(x, y):
     medx = median(x)
     medy = median(y)
     return math.sqrt((median([abs(xi - medx) for xi in x]) ** 2) + (median([abs(yi - medy) for yi in y]) ** 2))
+
+
+def dispersion(x, y=None):
+    """ Compute dispersion of horizontal and vertical gaze angles.
+    See also Salvucci & Goldberg, 2000, ETRA for details. 
+    
+    Args:
+        x (iterable): Horizontal gaze angles
+        y (iterable): Vertical gaze angles
+    
+    Returns: Dispersion value
+    """
+    if y is None:
+        return (max(x) - min(x))
+    else:
+        return (max(x) - min(x)) + (max(y) - min(y))
+

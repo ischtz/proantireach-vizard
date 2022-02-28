@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# Vizard gaze tracking toolbox
-# VR helper functions
+# vexptoolbox: Vizard Toolbox for Behavioral Experiments
+# Assorted VR helper and convenience functions
 
 import os
 import glob
@@ -9,6 +9,7 @@ import glob
 import viz
 import vizfx
 import vizact
+import vizinfo
 import viztask
 
 
@@ -159,9 +160,54 @@ class ObjectCollection(dict):
         return ObjectCollection(_src=obj)
 
 
+def steamVREasySetup(link_models=True, mono_mirror=True):
+    """ Initializes a SteamVR HMD and controllers using default settings. 
+    
+    This is a convenience function which essentially does the same as the
+    SteamVR examples bundled with Vizard, but in a single function call. 
 
-def showVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, duration=3.0):
-    """ Display head-locked message in VR, e.g. for instructions.
+    Args:
+        link_models (bool): if True, show 3d models linked to the controllers
+        mono_mirror (bool): if True, show a monocular VR view in the main window
+    
+    Returns: (hmd, controllers), with:
+        hmd: reference to the SteamVR.HMD object
+        controllers: list of references to available controller objects
+    """
+    try:
+        import steamvr
+
+        controllers = []
+
+        hmd = steamvr.HMD()
+        navNode = viz.addGroup()
+        link = viz.link(navNode, viz.MainView)
+        link.preMultLinkable(hmd.getSensor())
+        hmd.link = link # Keep link object accessible
+        hmd.setMonoMirror(mono_mirror)
+
+        if steamvr.getControllerList():
+            for controller in steamvr.getControllerList():
+                controller.model = controller.addModel()
+                if not controller.model:
+                    controller.model = viz.addGroup()
+                controller.model.disable(viz.INTERSECTION)
+                c_link = viz.link(controller, controller.model)
+                controller.link = c_link
+                controllers.append(controller)
+
+        print('* SteamVREasySetup(): Initialized HMD and {:d} controllers.'.format(len(controllers)))
+        return (hmd, controllers)
+    
+    except ImportError:
+        e = '* SteamVREasySetup(): Error initializing SteamVR components. '
+        e+= 'Please check if SteamVR is installed and active!'
+        print(e)
+        return (None, None)
+
+
+def showVRText(msg='Text', color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, duration=3.0):
+    """ Display head-locked message in VR for specified duration.
     
     Args:
         msg (str): Message text
@@ -170,15 +216,10 @@ def showVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, duration=3.
         scale (float): Text node scaling factor
         duration (float): Message display duration (seconds)
     """
-    # Create 3D text object
-    text = viz.addText3D(msg, scale=[scale, scale, scale], color=color)
-    text.resolution(1.0)
-    text.setThickness(0.1)
-    text.alignment(viz.ALIGN_CENTER)
-    
-    # Lock text to user viewpoint at fixed distance
-    text_link = viz.link(viz.MainView, text, enabled=True)
-    text_link.preTrans([0.0, 0.0, distance])
+    text = addHeadLockedText(msg=msg,
+                             color=color,
+                             distance=distance,
+                             scale=scale)
     
     # Fade text away after <duration> seconds
     fadeout = vizact.fadeTo(0, time=0.7)
@@ -188,7 +229,7 @@ def showVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, duration=3.
     text.remove()
 
 
-def waitVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, keys=' ', controller=None):
+def waitVRText(msg='Text', color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, keys=' ', controller=None):
     """ Display head-locked message in VR and wait for key press.
     
     Args:
@@ -201,6 +242,30 @@ def waitVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, keys=' ', c
     
     Returns: Vizard keypress event
     """
+    text = addHeadLockedText(msg=msg,
+                             color=color,
+                             distance=distance,
+                             scale=scale)
+
+    if controller is not None:
+        event = yield viztask.waitAny([viztask.waitKeyDown(keys), viztask.waitSensorDown(controller, None)])
+    else:
+        event = yield viztask.waitKeyDown(keys)
+    text.remove()
+    viztask.returnValue(event)
+
+
+def addHeadLockedText(msg='Text', color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05):
+    """ Add a head-locked text node, e.g. to display task feedback in VR.
+    
+    Args:
+        msg (str): Message text
+        color: RBG 3-tuple of color values
+        distance (float): Z rendering distance from MainView
+        scale (float): Text node scaling factor
+    
+    Returns: Vizard node3d object containing the text
+    """
     # Create 3D text object
     text = viz.addText3D(msg, scale=[scale, scale, scale], color=color)
     text.resolution(1.0)
@@ -210,13 +275,101 @@ def waitVRText(msg, color=[1.0, 1.0, 1.0], distance=2.0, scale=0.05, keys=' ', c
     # Lock text to user viewpoint at fixed distance
     text_link = viz.link(viz.MainView, text, enabled=True)
     text_link.preTrans([0.0, 0.0, distance])
+    text.link = text_link
+
+    return text
+
+
+def waitVRInstruction(msg='Text', title='Title', force_str=False, 
+                      distance=2.5, height=None, billboard=True,
+                      resolution=(1920, 1080), size=(1.92, 1.08),
+                      font_size=50, keys=' ', controller=None):
+    """ Display a world-locked instruction panel in VR and wait for key press.
     
+    Instructions can be provided as string or read from an external text file. 
+    Default is to show the panel at eye level at a distance of 2.5m. Depending on 
+    text length, you might need to adjust the font and/or canvas size. 
+
+    Args:
+        msg (str): One of:
+            - String: Message text to display on the instruction panel
+            - Valid text file name: File content is read and set as message text
+        title (str): Title bar text for instruction panel
+        force_str (bool): If True, treat *msg* as text even if it is a vald file name
+        distance (float): Z rendering distance from MainView (i.e., user's position)
+        height (float): Panel vertical center (Y). Defaults to user's eye height.
+        billboard (bool): If True, keep panel facing the viewer (default)
+        resolution (tuple): Pixel resolution of virtual canvas as (x, y)
+        size (tuple): Size of canvas object in meters as (x, y)
+        keys (str): Key code(s) to dismiss message (see viztask.waitKeyDown)
+        controller (sensor): Specify a controller sensor to also dismiss on button press
+    
+    Returns: Vizard keypress event upon key or button press
+    """
+    if not force_str:
+        try:
+            with open(msg, 'r') as tf:
+                text = tf.read()
+        except IOError: 
+            text = msg
+    else:
+        text = msg
+
+    hmd_pos = viz.MainView.getPosition()
+    if height is None:
+        height = hmd_pos[1]
+    pos = [0, height, distance]
+        
+    text = addWorldLockedCanvas(msg=text,
+                                title=title,
+                                pos=pos,
+                                billboard=billboard,
+                                resolution=resolution,
+                                size=size,
+                                font_size=font_size)
+
     if controller is not None:
         event = yield viztask.waitAny([viztask.waitKeyDown(keys), viztask.waitSensorDown(controller, None)])
     else:
         event = yield viztask.waitKeyDown(keys)
     text.remove()
     viztask.returnValue(event)
+
+
+def addWorldLockedCanvas(msg='Text', title='Title', pos=[0, 2, 2], billboard=False,
+                         resolution=(1920, 1080), size=(1.92, 1.08), font_size=50):
+    """ Add a world-locked text panel, e.g. for experiment instructions.
+    Convenience function for Vizard's vizinfo functionality with useful VR defaults.
+    
+    Args:
+        msg (str): Initial message text
+        title (str): Title bar text for InfoPanel
+        pos (3-tuple): World position for canvas center
+        billboard (bool): If True, keep canvas facing the viewer
+        resolution (tuple): Pixel resolution of virtual canvas as (x, y)
+        size (tuple): Size of canvas object in meters as (x, y)
+        font_size (int): Text font size
+    
+    Returns: Vizard node3d object containing the GUI canvas
+    """
+    canvas = viz.addGUICanvas(align=viz.ALIGN_CENTER)
+    canvas.setPosition(pos)
+    canvas.setRenderWorld(resolution=resolution, size=size)
+    canvas.setMouseStyle(0)
+    if billboard:
+        canvas.billboard(viz.BILLBOARD_YAXIS_GLOBAL)
+    
+    panel = vizinfo.InfoPanel(text=msg, 
+                              title=title, 
+                              parent=canvas, 
+                              key=None, 
+                              fontSize=font_size,
+                              align=viz.ALIGN_CENTER,
+                              wrapWidth=resolution[0],
+                              icon=False)    
+    canvas.panel = panel 
+
+    return canvas
 
 
 def addRayPrimitive(origin, direction, length=100, color=viz.RED, 

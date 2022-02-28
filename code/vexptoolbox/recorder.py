@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Vizard gaze tracking toolbox
+# vexptoolbox: Vizard Toolbox for Behavioral Experiments
 # Gaze and object tracking and recording class
 
 import sys
@@ -83,6 +83,7 @@ class SampleRecorder(object):
         self._gaze3d = [self.MISSING, self.MISSING, self.MISSING]
         self._gaze3d_valid = False
         self._gaze3d_intersect = None
+        self._gaze3d_intersect_name = ''
         self._gaze3d_last_valid = None
 
         # Sample recording task
@@ -819,13 +820,16 @@ class SampleRecorder(object):
                 eyeTarVec = vizmat.VectorToPoint(gazeOri, tgtHMD)
                 eyeGazeVec = (sam['trackVec_X'], sam['trackVec_Y'], sam['trackVec_Z'])
 
+                dC = vizmat.AngleBetweenVector(eyeGazeVec, eyeTarVec)
+                sam['targetErr'] = dC
+
                 angularDiff = vizmat.Transform()
                 angularDiff.makeVecRotVec(eyeTarVec, eyeGazeVec)
                 (dX, dY, _) = angularDiff.getEuler()
                 dY = -dY
                 sam['targetErr_X'], sam['targetErr_Y'] = dX, dY
 
-                delta.append(vizmat.AngleBetweenVector(eyeGazeVec, eyeTarVec))
+                delta.append(dC)
                 deltaX.append(dX)
                 deltaY.append(dY)
 
@@ -853,14 +857,17 @@ class SampleRecorder(object):
                                        sam['trackVec{:s}_Y'.format(eye)],
                                        sam['trackVec{:s}_Z'.format(eye)])
                         
+                        dCM = vizmat.AngleBetweenVector(eyeGazeVecM, eyeTarVecM)
+                        sam['targetErr{:s}'.format(eye)] = dCM
+
                         angularDiffM = vizmat.Transform()
                         angularDiffM.makeVecRotVec(eyeTarVecM, eyeGazeVecM)
                         (dXM, dYM, _) = angularDiff.getEuler()
-                        dYM = -dYM
-                        
+                        dYM = -dYM                        
                         sam['targetErr{:s}_X'.format(eye)] = dXM
                         sam['targetErr{:s}_Y'.format(eye)] = dYM
-                        deltaM[eyei].append(vizmat.AngleBetweenVector(eyeGazeVecM, eyeTarVecM))
+
+                        deltaM[eyei].append(dCM)
                         deltaXM[eyei].append(dXM)
                         deltaYM[eyei].append(dYM)
 
@@ -1032,6 +1039,7 @@ class SampleRecorder(object):
                 self._gaze3d = g3D_test.point
                 self._gaze3d_valid = True
                 self._gaze3d_intersect = g3D_test.object
+                self._gaze3d_intersect_name = g3D_test.name
                 self._gaze3d_last_valid = g3D_test.object
                 self._cursor.setPosition(g3D_test.point)
             else:
@@ -1120,10 +1128,12 @@ class SampleRecorder(object):
             s['gaze3d_posZ'] = self._gaze3d[2]
             if self._gaze3d_valid:
                 s['gaze3d_valid'] = 1
-                s['gaze3d_object'] = str(self._gaze3d_intersect)
+                s['gaze3d_object_id'] = int(self._gaze3d_intersect.id)
+                s['gaze3d_object_name'] = str(self._gaze3d_intersect_name)
             else:
                 s['gaze3d_valid'] = 0
-                s['gaze3d_object'] = ''
+                s['gaze3d_object_id'] = -1
+                s['gaze3d_object_name'] = ''
 
             # Device-specific eye tracking data
             if self._tracker_type == 'ViveProEyeTracker':
@@ -1236,7 +1246,7 @@ class SampleRecorder(object):
         # Eye tracker fields
         if self._tracker is not None:
             fields += ['gaze_posX', 'gaze_posY', 'gaze_posZ', 'gaze_dirX', 'gaze_dirY', 'gaze_dirZ',
-                       'gaze3d_valid', 'gaze3d_posX', 'gaze3d_posY', 'gaze3d_posZ', 'gaze3d_object']
+                       'gaze3d_valid', 'gaze3d_posX', 'gaze3d_posY', 'gaze3d_posZ', 'gaze3d_object_id', 'gaze3d_object_name']
 
             # Tracker-specific fields (not always available)
             special = ['gazeL_posX', 'gazeL_posY', 'gazeL_posZ', 'gazeL_dirX', 'gazeL_dirY', 'gazeL_dirZ',

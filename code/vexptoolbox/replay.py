@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
-# Vizard gaze tracking toolbox
+# vexptoolbox: Vizard Toolbox for Behavioral Experiments
 # Gaze and object position and orientation replay class
 
 import csv
 import random
 import colorsys
+from vexptoolbox.recorder import SampleRecorder
 
 import viz
 import vizact
 import vizinfo
+import vizinput
 import vizshape
 
 from .eyeball import Eyeball
@@ -85,6 +87,9 @@ class SampleReplay(object):
             self._gaze['R']['node'] = None
             self._gaze['']['node'] = None
 
+        # Set eyes to easy to distinguish colors by default
+        self.setEyeColors(combined='brown', left='green', right='blue')
+
         self._frame = 0
         self._samples = []
         self._sample_time_offset = 0.0
@@ -102,6 +107,7 @@ class SampleReplay(object):
         if ui:
             self._ui = vizinfo.InfoPanel('Sample Data Replay', align=viz.ALIGN_RIGHT_TOP)
             self._ui_bar = self._ui.addItem(viz.addProgressBar('0/0'))
+            vizact.onslider(self._ui_bar, self._ui_set_frame)
             self._ui_time = self._ui.addLabelItem('Time', viz.addText('NA'))
             self._ui_play = self._ui.addItem(viz.addButtonLabel('Start Replay'))
             vizact.onbuttondown(self._ui_play, self._ui_toggle_replay)
@@ -126,10 +132,13 @@ class SampleReplay(object):
 
         # Load recording
         if recording is not None:
-            if type(recording) == str:
-                self.loadRecording(recording)
-            else:
+            if type(recording) == SampleRecorder:
                 self._samples = recording._samples
+            else:
+                try:
+                    self.loadRecording(recording)
+                except TypeError:
+                    print('Recording argument must be a SampleRecorder instance or valid file name!')
 
 
     def _set_ui(self):
@@ -138,16 +147,17 @@ class SampleReplay(object):
 
             if len(self._samples) == 0:
                 self._ui_bar.message('No data')
-            else:
+            
+            elif self._frame < len(self._samples):
                 self._ui_bar.set(float(self._frame)/float(len(self._samples)))
-                self._ui_bar.message('{:d}/{:d}'.format(self._frame, len(self._samples)))
+                self._ui_bar.message('{:d}/{:d}'.format(self._frame+1, len(self._samples)))
 
                 t = self._samples[self._frame]['time'] - self._sample_time_offset
                 if t > 10000:
                     self._ui_time.message('{:.1f} s'.format(t/1000.0))
                 else:
                     self._ui_time.message('{:.1f} ms'.format(t))
-
+            
             if self.replaying and self._ui_play.getMessage() != 'Pause Replay':
                 self._ui_play.message('Pause Replay')
             elif not self.replaying and self._ui_play.getMessage() != 'Start Replay':
@@ -183,6 +193,12 @@ class SampleReplay(object):
                     self._gaze[eye_pos]['axes'].visible(True)
                 else:
                     self._gaze[eye_pos]['node'] = None
+
+
+    def _ui_set_frame(self, slider_pos):
+        """ Callback for progress bar click -> set current frame """
+        self._frame = int(slider_pos * len(self._samples))
+        self._set_ui()
 
 
     def _update_nodes(self):
@@ -231,14 +247,19 @@ class SampleReplay(object):
                 self._gaze[eye_pos]['ui'].disable()
 
 
-    def loadRecording(self, sample_file, sep='\t'):
+    def loadRecording(self, sample_file=None, sep='\t'):
         """ Load a SampleRecorder sample file for replay
         
         Args:
-            sample_file (str): Filename of CSV file to load
+            sample_file (str): Filename of CSV file to load. If no 
+                file is specified, show Vizard file selection dialog.
             sep (str): Field separator in CSV input file
         """
         s = []
+
+        if sample_file is None:
+            sample_file = vizinput.fileOpen(filter=[('Samples files', '*.csv;*.tsv;*.dat;*.txt')])
+
         with open(sample_file, 'r') as sf:
             reader = csv.DictReader(sf, delimiter=sep)
             if len(reader.fieldnames) == 1:
@@ -328,47 +349,48 @@ class SampleReplay(object):
         Args:
             advance (bool): if True, advance to next frame (default).
         """
-        f = self._samples[self._frame]
+        if self._frame < len(self._samples):
+            f = self._samples[self._frame]
 
-        # Set up eye representation(s)
-        for eye_pos in list(self._gaze.keys()):
-            if self._gaze[eye_pos]['node'] is not None:
-                if self._gaze[eye_pos]['data']:
-                    node = self._gaze[eye_pos][self._gaze[eye_pos]['node']]
-                    eye_mat = viz.Matrix()
-                    eye_mat.setEuler([f['gaze{:s}_dirX'.format(eye_pos)],
-                                    f['gaze{:s}_dirY'.format(eye_pos)],
-                                    f['gaze{:s}_dirZ'.format(eye_pos)]])
-                    eye_mat.setPosition([f['gaze{:s}_posX'.format(eye_pos)],
-                                        f['gaze{:s}_posY'.format(eye_pos)],
-                                        f['gaze{:s}_posZ'.format(eye_pos)]])
-                    eye_mat.setScale(node.getScale())
-                    node.setMatrix(eye_mat)
-                    node.visible(True)
-                else:
-                   self._gaze[eye_pos][self._gaze[eye_pos]['node']].visible(False) 
+            # Set up eye representation(s)
+            for eye_pos in list(self._gaze.keys()):
+                if self._gaze[eye_pos]['node'] is not None:
+                    if self._gaze[eye_pos]['data']:
+                        node = self._gaze[eye_pos][self._gaze[eye_pos]['node']]
+                        eye_mat = viz.Matrix()
+                        eye_mat.setEuler([f['gaze{:s}_dirX'.format(eye_pos)],
+                                        f['gaze{:s}_dirY'.format(eye_pos)],
+                                        f['gaze{:s}_dirZ'.format(eye_pos)]])
+                        eye_mat.setPosition([f['gaze{:s}_posX'.format(eye_pos)],
+                                            f['gaze{:s}_posY'.format(eye_pos)],
+                                            f['gaze{:s}_posZ'.format(eye_pos)]])
+                        eye_mat.setScale(node.getScale())
+                        node.setMatrix(eye_mat)
+                        node.visible(True)
+                    else:
+                        self._gaze[eye_pos][self._gaze[eye_pos]['node']].visible(False) 
 
-        # Position the 3D gaze cursor and other nodes
-        for node in self._nodes.keys():
-            if self._nodes[node]['visible']:
-                self._nodes[node]['obj'].setPosition([f['{:s}_posX'.format(node)], f['{:s}_posY'.format(node)], f['{:s}_posZ'.format(node)]])
+            # Position the 3D gaze cursor and other nodes
+            for node in self._nodes.keys():
+                if self._nodes[node]['visible']:
+                    self._nodes[node]['obj'].setPosition([f['{:s}_posX'.format(node)], f['{:s}_posY'.format(node)], f['{:s}_posZ'.format(node)]])
 
-        if self.replay_view:
-            viz.MainView.setEuler([f['view_dirX'], f['view_dirY'], f['view_dirZ']])
-            viz.MainView.setPosition([f['view_posX'], f['view_posY'], f['view_posZ']])
+            if self.replay_view:
+                viz.MainView.setEuler([f['view_dirX'], f['view_dirY'], f['view_dirZ']])
+                viz.MainView.setPosition([f['view_posX'], f['view_posY'], f['view_posZ']])
 
-        self._set_ui()
-        if self.console:
-            st = 't={:.2f}s, f={:d}\tgaze3d=[{:0.2f}, {:0.2f}, {:0.2f}]\tgaze=[{:0.2f}, {:0.2f}, {:0.2f}]'
-            print(st.format((f['time'] - self._sample_time_offset)/1000.0, self._frame, f['gaze3d_posX'], f['gaze3d_posY'], f['gaze3d_posZ'], f['gaze_dirX'], f['gaze_dirY'], f['gaze_dirZ']))
-        else:
-            if self._frame == 0 or self._frame == len(self._samples) or self._frame % 100 == 0:
-                print('Replaying frame {:d}/{:d}, t={:.1f} s'.format(self._frame, len(self._samples), 
+            if self.console:
+                st = 't={:.2f}s, f={:d}\tgaze3d=[{:0.2f}, {:0.2f}, {:0.2f}]\tgaze=[{:0.2f}, {:0.2f}, {:0.2f}]'
+                print(st.format((f['time'] - self._sample_time_offset)/1000.0, self._frame, f['gaze3d_posX'], f['gaze3d_posY'], f['gaze3d_posZ'], f['gaze_dirX'], f['gaze_dirY'], f['gaze_dirZ']))
+            else:
+                if self._frame == 0 or self._frame == len(self._samples) or self._frame % 100 == 0:
+                    print('Replaying frame {:d}/{:d}, t={:.1f} s'.format(self._frame, len(self._samples), 
                                                                     (f['time'] - self._sample_time_offset)/1000.0))
 
-        if advance:
-            self._frame += 1
-        if self._frame >= len(self._samples):
+            if advance:
+                self._frame += 1
+
+        else:
             # Reached last frame, stop replay and reset
             self.replaying = False
             self.finished = True
@@ -376,7 +398,9 @@ class SampleReplay(object):
                 self._player.setEnabled(False)
             print('Replay finished.')
 
+        self._set_ui()
 
+        
     def replayDone(self):
         """ Returns True if replay is finished,
             use as viztask.waitTrue(object.replayDone)
@@ -407,4 +431,22 @@ class SampleReplay(object):
         Args:
             enabled (bool): if True, move MainView with replay data """
         self.replay_view = enabled
+
+    
+    def setEyeColors(self, combined=None, left=None, right=None):
+        """ Set color of eyes and gaze rays used for visualization 
+        
+        Args:
+            combined: Color tuple (R,G,B) or one of ['blue', 'green', 'brown', 'grey']
+            left: As 'combined', but for left eye
+            right: As 'combined', but for right eye
+        """
+        if combined is not None:
+            self._gaze['']['eye'].setEyeColor(combined)
+        if left is not None:
+            self._gaze['L']['eye'].setEyeColor(left)
+        if right is not None:
+            self._gaze['R']['eye'].setEyeColor(right)
+        
+
 
