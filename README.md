@@ -1,6 +1,6 @@
 # Example VR Paradigm: Pro-/Anti-Reach Task
 
-This repository contains the Python code, data, and example analysis for a simple VR goal-directed movement task (pro-/anti-reach task), implemented using WorldViz Vizard and [our upcoming *vexptoolbox* software toolbox](https://github.com/ischtz/vizard-experiment-toolbox) to aid in developing behavioral experiments on the Vizard platform. 
+This repository contains the Python code, data, and example analysis for a simple VR goal-directed movement task (pro-/anti-reach task), implemented using WorldViz Vizard and [our *vexptoolbox* software toolbox](https://github.com/ischtz/vizard-experiment-toolbox) designed to aid in developing behavioral experiments on the Vizard platform. 
 
 It can serve as a starting point or tutorial for anyone wanting to implement their own experiments, and as documentation of the data format used by vexptoolbox. Two versions of the same experiment are provided to serve as implementation examples: 
 
@@ -58,8 +58,22 @@ If you encounter any errors or strange behavior during testing, or if you test t
 
 ## Citation
 
-**The manuscript accompanying this project is currently being prepared and will be linked here after peer review.**
+If you use this example code or our toolbox for behavioral experiments in your own research or teaching, we would be very happy if you cited the corresponding [manuscript](https://link.springer.com/article/10.3758/s13428-022-01831-6): 
 
+*Schuetz, I., Karimpur, H. & Fiehler, K. vexptoolbox: A software toolbox for human behavior studies using the Vizard virtual reality platform. Behav Res (2022). https://doi.org/10.3758/s13428-022-01831-6*
+
+Citation in BibTeX format:
+```
+@Article{Schuetz2022,
+  author   = {Schuetz, Immo and Karimpur, Harun and Fiehler, Katja},
+  journal  = {Behavior Research Methods},
+  title    = {vexptoolbox: A software toolbox for human behavior studies using the Vizard virtual reality platform},
+  year     = {2022},
+  issn     = {1554-3528},
+  doi      = {10.3758/s13428-022-01831-6},
+  url      = {https://doi.org/10.3758/s13428-022-01831-6},
+}
+```
 
 
 ## References
